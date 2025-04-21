@@ -1,6 +1,6 @@
 const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
-const { Brand } = require("../models/models");
+const { Brand } = require("../models");
 
 // 🔹 Отримати всі літери та назви брендів
 const getAllBrands = async (req, res) => {

@@ -1,7 +1,7 @@
 const { format } = require("mysql2");
 const swaggerJSDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
-const { Menu } = require("../models/models");
+const { Menu } = require("../models");
 
 const { HOST } = process.env;
 

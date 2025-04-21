@@ -1,4 +1,4 @@
-const { Order, Basket, OrderedItem } = require("../models/models");
+const { Order, Basket, OrderedItem } = require("../models");
 const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 const { date } = require("joi");

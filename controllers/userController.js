@@ -9,7 +9,7 @@ const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 // const mailer = require("./mailer");
 
-const { User } = require("../models/models");
+const { User } = require("../models");
 
 const { SECRET_KEY } = process.env;
 

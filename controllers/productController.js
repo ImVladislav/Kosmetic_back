@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 
-const { Product } = require("../models/models");
+const { Product } = require("../models");
 const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 

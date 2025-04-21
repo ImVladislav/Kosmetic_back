@@ -1,41 +1,38 @@
 require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 
-const sequelize = require("./db");
-const models = require("./models/models");
+const db = require("./models"); // models/index.js
 const router = require("./routes/index");
 const errorHandler = require("./middlewares/ErrorHandlingMiddleware");
-
-const { PORT = 3000 } = process.env;
+const swaggerDocs = require("./docs/swagger"); // ТВОЙ swagger – залишаємо обов'язково
 
 const app = express();
-const swaggerDocs = require("./docs/swagger");
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
 // Swagger
-swaggerDocs(app);
+swaggerDocs(app); // ✅ НЕ ВИДАЛЯЄМО
 
-// роутинг
+// API routes
 app.use("/api", router);
 
-// обробка помилок
+// Error middleware
 app.use(errorHandler);
 
+// Запуск сервера
 const start = async () => {
   try {
-    await sequelize.authenticate();
-    sequelize
-      .sync({ force: false }) // або { alter: true } якщо хочеш оновлювати структуру
-      .then(() => console.log("Database synced"))
-      .catch((err) => console.error("Error syncing database:", err));
+    await db.sequelize.authenticate();
+    await db.sequelize.sync({ alter: false }); // або { force: false }
 
-    app.listen(PORT, () => console.log(`SERVER STARTED ON PORT ${PORT}`));
-  } catch (error) {
-    console.log(error);
+    app.listen(PORT, () =>
+      console.log(`✅ SERVER RUNNING on port ${PORT}`)
+    );
+  } catch (err) {
+    console.error("❌ DATABASE ERROR:", err);
   }
 };
 
