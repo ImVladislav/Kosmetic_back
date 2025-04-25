@@ -105,7 +105,7 @@ Kosmetic_back/
 
 ## 📚 Документація проекту
 
-Документація проекту доступна за посиланням [here](https://beauty-blossom-team.github.io/kosmetic_back/).
+Документація проекту доступна за посиланням [here](https://kosmetic-back.onrender.com/api/docs).
 
 ## 🔒 Тести
 

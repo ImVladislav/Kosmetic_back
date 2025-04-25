@@ -3,69 +3,104 @@ const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 
 // Додати товар в кошик
-const createBasket = async (req, res) => {
+const addToBasket = async (req, res) => {
   const { productId, quantity } = req.body;
   const owner = req.user.id;
-  if (!productId || quantity <= 0)
-    return next(ApiError.badRequest("Missing product ID or quantity"));
 
-  const orderedItem = await OrderedItem.create({ productId, quantity });
+  let basket = await Basket.findOne({ where: { owner } });
+  if (!basket) {
+    basket = await Basket.create({ owner });
+  }
 
-  const basket = await Basket.create({ owner, orderedItem: orderedItem.id });
-  res.json({ message: "Товар додано в кошик", orderedItem });
+  const item = await OrderedItem.create({
+    basketId: basket.id,
+    productId,
+    quantity: quantity || 1,
+  });
+
+  res.json({ item });
 };
 
 //Отримати всі товари в кошику по користувачу
 const getBasket = async (req, res) => {
-  const { id } = req.params;
+  // const { id } = req.params;
   const owner = req.user.id;
-  const basketItems = await Basket.findAll({
-    where: { owner },
-    include: OrderedItem,
+
+  const basket = await Basket.findOne({
+    where: { owner: userId },
+    include: {
+      model: OrderedItem,
+      include: ["Product"],
+    },
   });
 
-  if (!basketItems.length) {
-    return next(ApiError.notFound("Basket is empty"));
-  }
-  res.json({ basketItems });
+  if (!basket) return res.json({ items: [] });
+  res.json(basket.OrderedItems || []);
 };
 
 // Оновити кількість товару в кошику
-const updateQuantity = async (req, res) => {
+
+const updateQuantity = async (req, res, next) => {
   const { id } = req.params;
   const { quantity } = req.body;
-  const owner = req.user.id;
+
   if (quantity <= 0) {
-    return next(ApiError.badRequest("Quantity must be greater than 0"));
+    return next(ApiError.badRequest("Кількість має бути більшою за 0"));
   }
-  const OrderedItem = await OrderedItem.findByPk(id);
-  if (!OrderedItem) {
-    return next(ApiError.notFound("OrderedItem not found"));
+
+  const item = await OrderedItem.findByPk(id);
+  if (!item) {
+    return next(ApiError.notFound("Товар не знайдено"));
   }
-  OrderedItem.quantity = quantity;
-  await OrderedItem.save();
-  res.json({ message: "Quantity updated successfully", OrderedItem });
+
+  item.quantity = quantity;
+  await item.save();
+
+  res.json({
+    message: "Кількість оновлено",
+    item,
+  });
 };
 
 // Видалити товар з кошика
-const deleteBasketItem = async (req, res) => {
+const deleteBasketItem = async (req, res, next) => {
   const { id } = req.params;
   const owner = req.user.id;
 
-  const basketItem = await Basket.findByPk({
-    where: { owner, orderedItem: id },
+  const item = await OrderedItem.findOne({
+    where: { id },
+    include: {
+      model: Basket,
+      where: { owner },
+    },
   });
-  if (!basketItem) {
-    return next(ApiError.notFound("OrderedItem not found"));
+
+  if (!item) {
+    return next(
+      ApiError.notFound("Товар не знайдено або не належить користувачу")
+    );
   }
+
   await OrderedItem.destroy({ where: { id } });
-  await Basket.destroy({ where: { orderedItem: id, owner } });
-  res.json({ message: "OrderedItem deleted successfully" });
+
+  res.json({ message: "Товар видалено з кошика" });
+};
+// Очистити кошик
+const clearBasket = async (req, res) => {
+  const userId = req.user.id;
+
+  const basket = await Basket.findOne({ where: { owner: userId } });
+  if (!basket) return res.status(404).json({ message: "Basket not found" });
+
+  await OrderedItem.destroy({ where: { basketId: basket.id } });
+
+  res.json({ message: "Basket cleared" });
 };
 
 module.exports = {
-  createBasket: ctrlWrapper(createBasket),
+  addToBasket: ctrlWrapper(addToBasket),
   getBasket: ctrlWrapper(getBasket),
   updateQuantity: ctrlWrapper(updateQuantity),
   deleteBasketItem: ctrlWrapper(deleteBasketItem),
+  clearBasket: ctrlWrapper(clearBasket),
 };

@@ -10,14 +10,16 @@ const ctrlWrapper = require("../helpers/ctrlWrapper");
 // const mailer = require("./mailer");
 
 const { User } = require("../models");
+const { link } = require("joi");
 
 const { SECRET_KEY } = process.env;
 
 const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
-// реєстрація користувача
+// реєстрація користувача та генерація токену
 const register = async (req, res, next) => {
   const { email, password, number } = req.body;
+
   if (!email || !password || !number) {
     return next(ApiError.badRequest("Missing required fields"));
   }
@@ -38,12 +40,14 @@ const register = async (req, res, next) => {
   }
 
   if (number.length !== 10) {
-    return next(ApiError.badRequest("Invalid phone number2"));
+    console.log("number", number.length);
+    return next(ApiError.badRequest("Invalid phone number. Must be 10 digits"));
   }
 
   const numberWithPlus = `+38${number}`;
   const hashedPassword = await bcrypt.hash(password, 10);
-  const avatarUrl = gravatar.url(email, { s: "200", r: "pg", d: "mm" });
+
+  const avatarURL = gravatar.url(email);
   const verificationCode = nanoid();
   const isAdmin = req.body.isAdmin;
 
@@ -51,10 +55,21 @@ const register = async (req, res, next) => {
     ...req.body,
     number: numberWithPlus,
     password: hashedPassword,
-    avatarUrl,
+    avatarURL,
     verificationCode,
     isAdmin,
   });
+
+  // Генерація токену
+  const token = jwt.sign(
+    { id: newUser.id, email: newUser.email, isAdmin: newUser.isAdmin },
+    SECRET_KEY,
+    { expiresIn: "24h" }
+  );
+
+  newUser.token = token;
+  await newUser.save();
+  // Відправка листа з підтвердженням реєстрації на пошту користувача
   const message = {
     to: email,
     subject: "Підтвердження реєстрації на сайті beautyblossom.com.ua",
@@ -71,6 +86,7 @@ const register = async (req, res, next) => {
         beautyblossom.opt@gmail.com`,
   };
   // mailer(message);
+
   res.status(201).json({
     email: newUser.email,
     firstName: newUser.firstName,
@@ -78,6 +94,7 @@ const register = async (req, res, next) => {
     number: newUser.number,
     isAdmin: newUser.isAdmin,
     optUser: newUser.optUser,
+    token: newUser.token,
   });
 };
 
@@ -109,7 +126,7 @@ const login = async (req, res, next) => {
   const token = jwt.sign(
     { id: user.id, email: user.email, isAdmin: user.isAdmin },
     SECRET_KEY,
-    { expiresIn: "1h" }
+    { expiresIn: "24h" }
   );
 
   user.token = token;
@@ -141,7 +158,6 @@ const getCurrent = async (req, res, next) => {
     number: user.number,
     isAdmin: user.isAdmin,
     optUser: user.optUser,
-    token: user.token,
   });
 };
 
@@ -153,53 +169,25 @@ const logout = async (req, res, next) => {
   res.json({ message: "Logout successful" });
 };
 
-const uploadAvatar = async (req, res, next) => {
-  const { id } = req.user;
-  const user = await User.findByPk(id);
-  const avatarName = `${id}_${nanoid()}.jpg`;
-  const avatarPath = path.join(avatarsDir, avatarName);
-  await fs.promises.rename(req.file.path, avatarPath);
-  user.avatarUrl = avatarName;
-  await user.save();
-  res.json({ avatarUrl: user.avatarUrl });
-};
-
-const deleteAvatar = async (req, res, next) => {
-  const { id } = req.user;
-  const user = await User.findByPk(id);
-  const avatarPath = path.join(avatarsDir, user.avatarUrl);
-  await fs.promises.unlink(avatarPath);
-  user.avatarUrl = null;
-  await user.save();
-  res.json({ message: "Avatar deleted successfully" });
-};
-
-const verify = async (req, res, next) => {
-  const { verificationCode } = req.body;
-  const user = await User.findOne({ where: { verificationCode } });
-  if (!user) {
-    return next(ApiError.badRequest("Invalid verification code"));
-  }
-  user.verified = true;
-  await user.save();
-  res.json({ message: "Verification successful" });
-};
-
 const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   const user = await User.findOne({ where: { email } });
   if (!user) {
     return next(ApiError.badRequest("User not found"));
   }
-  const newPassword = nanoid();
+  // Генерація нового паролю
+  const newPassword = nanoid(10);
   const hashedPassword = await bcrypt.hash(newPassword, 10);
   user.password = hashedPassword;
+
   await user.save();
+  // Відправка листа з новим паролем на пошту користувача
   const message = {
     to: email,
     subject: "Вітаємо, Ви успішно змінили пароль на нашому сайті!",
     text: `Ваш новий пароль: ${newPassword}`,
   };
+
   // mailer(message);
   res.json({ message: "Password changed successfully" });
 };
@@ -222,7 +210,21 @@ const update = async (req, res, next) => {
   const { id } = req.user;
   const user = await User.findByPk(id);
   const updatedUser = await user.update(req.body);
-  res.json(updatedUser);
+  res.json({
+    email: updatedUser.email,
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
+    number: updatedUser.number,
+    avatarURL: updatedUser.avatarURL,
+    city: updatedUser.city,
+    link: updatedUser.link,
+    offlineShop: updatedUser.offlineShop,
+    onlineShop: updatedUser.onlineShop,
+    socialMedia: updatedUser.socialMedia,
+    isAdmin: updatedUser.isAdmin,
+    optUser: updatedUser.optUser,
+  });
+  // res.json(updatedUser);
 };
 
 module.exports = {
@@ -230,4 +232,7 @@ module.exports = {
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
+  forgotPassword: ctrlWrapper(forgotPassword),
+  changePassword: ctrlWrapper(changePassword),
+  update: ctrlWrapper(update),
 };
