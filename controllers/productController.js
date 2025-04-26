@@ -120,9 +120,9 @@ const createProduct = async (req, res, next) => {
     return ApiError.badRequest("Missing required field description");
   if (!brand) return next(ApiError.badRequest("Missing required field brand"));
 
-  const productId = await Product.findOne({ where: { id } });
-  if (productId)
-    return next(ApiError.badRequest("Product with this ID already exists"));
+  // const productId = await Product.findOne({ where: { id } });
+  // if (productId)
+  //   return next(ApiError.badRequest("Product with this ID already exists"));
 
   const productCode = await Product.findOne({ where: { code } });
   if (productCode)
