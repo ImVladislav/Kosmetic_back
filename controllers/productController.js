@@ -90,7 +90,7 @@ const getProductById = async (req, res, next) => {
 /** 🔹 Створити продукт */
 const createProduct = async (req, res, next) => {
   const {
-    id,
+    // id,
     name,
     article,
     code,
@@ -111,7 +111,7 @@ const createProduct = async (req, res, next) => {
     compound,
   } = req.body;
 
-  if (!id) return next(ApiError.badRequest("Missing required field id"));
+  // if (!id) return next(ApiError.badRequest("Missing required field id"));
   if (!name) return next(ApiError.badRequest("Missing required field name"));
   if (!article)
     return next(ApiError.badRequest("Missing required field article"));
@@ -129,7 +129,7 @@ const createProduct = async (req, res, next) => {
     return next(ApiError.badRequest("Product with this code already exists"));
 
   const product = await Product.create({
-    id,
+    // id,
     name,
     article,
     code,
