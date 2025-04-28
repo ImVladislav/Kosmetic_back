@@ -89,68 +89,63 @@ const getProductById = async (req, res, next) => {
 
 /** 🔹 Створити продукт */
 const createProduct = async (req, res, next) => {
-  const {
-    // id,
-    name,
-    article,
-    code,
-    amount,
-    description,
-    price,
-    priceOld,
-    priceOldOPT,
-    priceOPT,
-    brand,
-    images,
-    newness,
-    sale,
-    category,
-    subCategory,
-    subSubCategory,
-    country,
-    compound,
-  } = req.body;
+  try {
+    const {
+      name,
+      article,
+      code,
+      amount,
+      description,
+      price,
+      priceOld,
+      priceOldOPT,
+      priceOPT,
+      brand,
+      images,
+      newness,
+      sale,
+      category,
+      subCategory,
+      subSubCategory,
+      country,
+      compound,
+    } = req.body;
 
-  // if (!id) return next(ApiError.badRequest("Missing required field id"));
-  if (!name) return next(ApiError.badRequest("Missing required field name"));
-  if (!article)
-    return next(ApiError.badRequest("Missing required field article"));
-  if (!code) return next(ApiError.badRequest("Missing required field code"));
-  if (!description)
-    return next(ApiError.badRequest("Missing required field description"));
-  if (!brand) return next(ApiError.badRequest("Missing required field brand"));
+    if (!name || !article || !code || !description || !brand) {
+      return next(ApiError.badRequest("Missing required fields"));
+    }
 
-  // const productId = await Product.findOne({ where: { id } });
-  // if (productId)
-  //   return next(ApiError.badRequest("Product with this ID already exists"));
+    const existingProduct = await Product.findOne({ where: { code } });
+    if (existingProduct) {
+      return next(ApiError.badRequest("Product with this code already exists"));
+    }
 
-  const productCode = await Product.findOne({ where: { code } });
-  if (productCode)
-    return next(ApiError.badRequest("Product with this code already exists"));
+    const product = await Product.create({
+      name,
+      article,
+      code: Number(code),
+      amount: amount !== null ? Number(amount) : 0,
+      description,
+      price: price !== null ? Number(price) : 0,
+      priceOld: priceOld !== null ? Number(priceOld) : 0,
+      priceOldOPT: priceOldOPT !== null ? Number(priceOldOPT) : 0,
+      priceOPT: priceOPT !== null ? Number(priceOPT) : 0,
+      brand,
+      images: images || "",
+      newness: Boolean(newness),
+      sale: Boolean(sale),
+      category: category || "",
+      subCategory: subCategory || "",
+      subSubCategory: subSubCategory || "",
+      country: country || "",
+      compound: compound || "",
+    });
 
-  const product = await Product.create({
-    // id,
-    name,
-    article,
-    code,
-    amount,
-    description,
-    price,
-    priceOld,
-    priceOldOPT,
-    priceOPT,
-    brand,
-    images,
-    newness,
-    sale,
-    category,
-    subCategory,
-    subSubCategory,
-    country,
-    compound,
-  });
-
-  return res.status(201).json(product);
+    return res.status(201).json(product);
+  } catch (error) {
+    console.error("Error in createProduct:", error);
+    next(ApiError.internal("Server error while creating product"));
+  }
 };
 
 /** 🔹 Оновити продукт */
