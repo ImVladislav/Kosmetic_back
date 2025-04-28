@@ -143,8 +143,12 @@ const createProduct = async (req, res, next) => {
 
     return res.status(201).json(product);
   } catch (error) {
-    console.error("Error in createProduct:", error);
-    next(ApiError.internal("Server error while creating product"));
+
+      console.error("CREATE PRODUCT ERROR:", error); // додали вивід реальної помилки
+      next(ApiError.internal(error.message || "Server error while creating product"));
+
+    // console.error("Error in createProduct:", error);
+    // next(ApiError.internal("Server error while creating product"));
   }
 };
 
