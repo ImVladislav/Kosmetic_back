@@ -117,7 +117,7 @@ const createProduct = async (req, res, next) => {
     return next(ApiError.badRequest("Missing required field article"));
   if (!code) return next(ApiError.badRequest("Missing required field code"));
   if (!description)
-    return ApiError.badRequest("Missing required field description");
+    return next(ApiError.badRequest("Missing required field description"));
   if (!brand) return next(ApiError.badRequest("Missing required field brand"));
 
   // const productId = await Product.findOne({ where: { id } });
