@@ -3,6 +3,13 @@ const router = express.Router();
 
 const productController = require("../controllers/productController");
 
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" }); // тимчасова папка
+
+
+
+router.post("/import", upload.single("file"), productController.importProductsFromExcel);
+
 // отримання всіх товарів
 router.get("/", productController.getAllProducts);
 /**

@@ -4,6 +4,11 @@ const { Product } = require("../models");
 const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 
+const fs = require("fs");
+const path = require("path");
+const xlsx = require("xlsx");
+
+
 /** 🔹 Отримати всі продукти */
 const getAllProducts = async (req, res, next) => {
   const { page = 1, limit = 4 } = req.query;
@@ -238,7 +243,7 @@ const getBrandProducts = async (req, res, next) => {
 
 /** 🔹 Пошук продуктів по назві та коду */
 const getSearchQueryProducts = async (req, res, next) => {
-  const { page = 1, limit = 4, query } = req.query;
+  const { page = 1, limit = 24, query } = req.query;
   const offset = (+page - 1) * +limit;
 
   if (!query) return next(ApiError.badRequest("Missing search query"));
@@ -321,6 +326,40 @@ const getNewnessProducts = async (req, res, next) => {
   });
 };
 
+const importProductsFromExcel = async (req, res, next) => {
+  try {
+    console.log("Імпорт стартував", req.file);
+
+    const workbook = xlsx.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = xlsx.utils.sheet_to_json(sheet);
+
+    console.log("Знайдено рядків:", rows.length);
+
+    for (const row of rows) {
+      console.log("Обробка товару:", row.code);
+
+      const existing = await Product.findOne({ where: { code: row.code } });
+      if (existing) {
+        await existing.update(row);
+        console.log("Оновлено:", row.code);
+      } else {
+        await Product.create(row);
+        console.log("Створено:", row.code);
+      }
+    }
+
+    fs.unlinkSync(req.file.path);
+    res.json({ message: "Імпорт завершено успішно" });
+  } catch (err) {
+    console.error("Помилка імпорту:", err);
+    res.status(500).json({ message: "Помилка імпорту файлу" });
+  }
+};
+
+
+
+
 module.exports = {
   createProduct: ctrlWrapper(createProduct),
   getAllProducts: ctrlWrapper(getAllProducts),
@@ -332,4 +371,5 @@ module.exports = {
   getSearchQueryProducts: ctrlWrapper(getSearchQueryProducts),
   getDiscountedProducts: ctrlWrapper(getDiscountedProducts),
   getNewnessProducts: ctrlWrapper(getNewnessProducts),
+  importProductsFromExcel: ctrlWrapper(importProductsFromExcel),
 };
