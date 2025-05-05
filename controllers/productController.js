@@ -4,6 +4,11 @@ const { Product } = require("../models");
 const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 
+const fs = require("fs");
+const path = require("path");
+const xlsx = require("xlsx");
+
+
 /** 🔹 Отримати всі продукти */
 const getAllProducts = async (req, res, next) => {
   const { page = 1, limit = 32 } = req.query;
@@ -89,68 +94,67 @@ const getProductById = async (req, res, next) => {
 
 /** 🔹 Створити продукт */
 const createProduct = async (req, res, next) => {
-  const {
-    // id,
-    name,
-    article,
-    code,
-    amount,
-    description,
-    price,
-    priceOld,
-    priceOldOPT,
-    priceOPT,
-    brand,
-    images,
-    newness,
-    sale,
-    category,
-    subCategory,
-    subSubCategory,
-    country,
-    compound,
-  } = req.body;
+  try {
+    const {
+      name,
+      article,
+      code,
+      amount,
+      description,
+      price,
+      priceOld,
+      priceOldOPT,
+      priceOPT,
+      brand,
+      images,
+      newness,
+      sale,
+      category,
+      subCategory,
+      subSubCategory,
+      country,
+      compound,
+    } = req.body;
 
-  // if (!id) return next(ApiError.badRequest("Missing required field id"));
-  if (!name) return next(ApiError.badRequest("Missing required field name"));
-  if (!article)
-    return next(ApiError.badRequest("Missing required field article"));
-  if (!code) return next(ApiError.badRequest("Missing required field code"));
-  if (!description)
-    return ApiError.badRequest("Missing required field description");
-  if (!brand) return next(ApiError.badRequest("Missing required field brand"));
+    if (!name || !article || !code || !description || !brand) {
+      return next(ApiError.badRequest("Missing required fields"));
+    }
 
-  // const productId = await Product.findOne({ where: { id } });
-  // if (productId)
-  //   return next(ApiError.badRequest("Product with this ID already exists"));
+    const existingProduct = await Product.findOne({ where: { code } });
+    if (existingProduct) {
+      return next(ApiError.badRequest("Product with this code already exists"));
+    }
 
-  const productCode = await Product.findOne({ where: { code } });
-  if (productCode)
-    return next(ApiError.badRequest("Product with this code already exists"));
+    const product = await Product.create({
+      name,
+      article,
+      code: Number(code),
+      amount: amount !== null ? Number(amount) : 0,
+      description,
+      price: price !== null ? Number(price) : 0,
+      priceOld: priceOld !== null ? Number(priceOld) : 0,
+      priceOldOPT: priceOldOPT !== null ? Number(priceOldOPT) : 0,
+      priceOPT: priceOPT !== null ? Number(priceOPT) : 0,
+      brand,
+      images: images || "",
+      newness: Boolean(newness),
+      sale: Boolean(sale),
+      category: category || "",
+      subCategory: subCategory || "",
+      subSubCategory: subSubCategory || "",
+      country: country || "",
+      compound: compound || "",
+    });
 
-  const product = await Product.create({
-    // id,
-    name,
-    article,
-    code,
-    amount,
-    description,
-    price,
-    priceOld,
-    priceOldOPT,
-    priceOPT,
-    brand,
-    images,
-    newness,
-    sale,
-    category,
-    subCategory,
-    subSubCategory,
-    country,
-    compound,
-  });
+    return res.status(201).json(product);
+  } catch (error) {
 
-  return res.status(201).json(product);
+      console.error("CREATE PRODUCT ERROR:", error); // додали вивід реальної помилки
+      next(ApiError.internal(error.message || "Server error while creating product"));
+
+    // console.error("Error in createProduct:", error);
+    // next(ApiError.internal("Server error while creating product"));
+  }
 };
 
 /** 🔹 Оновити продукт */
@@ -239,7 +243,9 @@ const getBrandProducts = async (req, res, next) => {
 
 /** 🔹 Пошук продуктів по назві та коду */
 const getSearchQueryProducts = async (req, res, next) => {
-  const { page = 1, limit = 32, query } = req.query;
+
+  const { page = 1, limit = 24, query } = req.query;
+
   const offset = (+page - 1) * +limit;
 
   if (!query) return next(ApiError.badRequest("Missing search query"));
@@ -322,6 +328,40 @@ const getNewnessProducts = async (req, res, next) => {
   });
 };
 
+const importProductsFromExcel = async (req, res, next) => {
+  try {
+    console.log("Імпорт стартував", req.file);
+
+    const workbook = xlsx.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = xlsx.utils.sheet_to_json(sheet);
+
+    console.log("Знайдено рядків:", rows.length);
+
+    for (const row of rows) {
+      console.log("Обробка товару:", row.code);
+
+      const existing = await Product.findOne({ where: { code: row.code } });
+      if (existing) {
+        await existing.update(row);
+        console.log("Оновлено:", row.code);
+      } else {
+        await Product.create(row);
+        console.log("Створено:", row.code);
+      }
+    }
+
+    fs.unlinkSync(req.file.path);
+    res.json({ message: "Імпорт завершено успішно" });
+  } catch (err) {
+    console.error("Помилка імпорту:", err);
+    res.status(500).json({ message: "Помилка імпорту файлу" });
+  }
+};
+
+
+
+
 module.exports = {
   createProduct: ctrlWrapper(createProduct),
   getAllProducts: ctrlWrapper(getAllProducts),
@@ -333,4 +373,5 @@ module.exports = {
   getSearchQueryProducts: ctrlWrapper(getSearchQueryProducts),
   getDiscountedProducts: ctrlWrapper(getDiscountedProducts),
   getNewnessProducts: ctrlWrapper(getNewnessProducts),
+  importProductsFromExcel: ctrlWrapper(importProductsFromExcel),
 };
