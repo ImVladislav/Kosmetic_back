@@ -1,9 +1,8 @@
 const Routes = require("express");
-
 const router = new Routes();
-const basketController = require("../controllers/basketController");
 
 const authenticate = require("../middlewares/authenticate");
+const basketController = require("../controllers/basketController");
 
 //отримання всіх товарів у корзині користувача
 router.get("/", authenticate, basketController.getBasket);
@@ -11,26 +10,27 @@ router.get("/", authenticate, basketController.getBasket);
  * @swagger
  * /basket:
  *   get:
- *     tags:
- *       - basket
- *     summary: Отримати всі товари з кошика користувача
+ *     summary: Отримати всі товари у кошику користувача
+ *     tags: [basket]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Повертає вміст кошика
- *       401:
- *         description: Неавторизований доступ
+ *         description: Повертає кошик користувача
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Basket'
  */
 
-router.post("/add", authenticate, basketController.addToBasket); // додати новий товар до корзини користувача
+//додати новий товар або оновити товар у кошику користувача
+router.post("/", authenticate, basketController.addOrUpdateItem);
 /**
  * @swagger
- * /basket/add:
+ * /basket:
  *   post:
- *     tags:
- *       - basket
- *     summary: Додати товар в кошик
+ *     summary: Додати або оновити товар у кошику
+ *     tags: [basket]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -39,117 +39,64 @@ router.post("/add", authenticate, basketController.addToBasket); // додати
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - productId
- *               - quantity
  *             properties:
  *               productId:
  *                 type: integer
- *                 example: 1
  *               quantity:
  *                 type: integer
- *                 example: 2
  *     responses:
- *       201:
- *         description: Товар додано в кошик
+ *       200:
+ *         description: Товар додано або оновлено
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BasketItem'
+ */
+
+// видалити товар з кошика по id
+router.delete("/clear/:productId", authenticate, basketController.removeItem);
+/**
+ * @swagger
+ * /basket/clear/{productId}:
+ *   delete:
+ *     summary: Видалити товар з кошика
+ *     tags: [basket]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: productId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Товар успішно видалено
  *       401:
  *         description: Неавторизований доступ
  */
 
-router.patch("/update/:id", authenticate, basketController.updateQuantity); // оновити кількість товару
-/**
- * @swagger
- * /basket/update/{id}:
- *   patch:
- *     tags:
- *       - basket
- *     summary: Оновити кількість товару в кошику
- *     description: Змінює кількість конкретного товару в кошику користувача
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID товару в кошику
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - quantity
- *             properties:
- *               quantity:
- *                 type: integer
- *                 example: 3
- *     responses:
- *       200:
- *         description: Кількість успішно оновлена
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Кількість оновлено"
- *                 item:
- *                   $ref: '#/components/schemas/OrderedItem'
- *       400:
- *         description: Невірна кількість
- *       404:
- *         description: Товар не знайдено
- */
-router.delete("/remove/:id", authenticate, basketController.deleteBasketItem); // видалити товар
-/**
- * @swagger
- * /basket/remove/{id}:
- *   delete:
- *     tags:
- *       - basket
- *     summary: Видалити товар з кошика
- *     description: Видаляє один товар з кошика користувача
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID товару в кошику
- *     responses:
- *       200:
- *         description: Товар успішно видалено
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Товар видалено з кошика"
- *       404:
- *         description: Товар не знайдено або не належить користувачу
- */
-
-router.delete("/clear", authenticate, basketController.clearBasket); // очистити корзину
+// очистити весь кошик
+router.delete("/clear", authenticate, basketController.clearBasket);
 /**
  * @swagger
  * /basket/clear:
  *   delete:
- *     tags:
- *       - basket
- *     summary: Очистити кошик користувача
+ *     summary: Очистити весь кошик користувача
+ *     tags: [basket]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Кошик очищено
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Кошик очищено
  *       401:
  *         description: Неавторизований доступ
  */

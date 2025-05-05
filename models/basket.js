@@ -1,15 +1,13 @@
 module.exports = (sequelize, DataTypes) => {
-    const Basket = sequelize.define("Basket", {
-      owner: { type: DataTypes.INTEGER },
-      orderedItem: { type: DataTypes.INTEGER },
-    });
-  
-    Basket.associate = (models) => {
-      // Перевірка, чи існує OrderedItem в models
-      if (models.OrderedItem) {
-        Basket.hasMany(models.OrderedItem, { foreignKey: "basketId" });
-      }
-    };
-  
-    return Basket;
+  const Basket = sequelize.define("Basket", {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    owner: { type: DataTypes.INTEGER },
+  });
+
+  Basket.associate = (models) => {
+    Basket.hasMany(models.BasketItem, { foreignKey: "basketId" });
+    Basket.belongsTo(models.User, { foreignKey: "owner" });
   };
+
+  return Basket;
+};

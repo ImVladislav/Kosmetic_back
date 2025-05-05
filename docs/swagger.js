@@ -1,9 +1,7 @@
-const { format } = require("mysql2");
 const swaggerJSDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
-const { Menu } = require("../models");
 
-const { HOST } = process.env;
+const { HOST, PORT } = process.env;
 
 const options = {
   definition: {
@@ -15,7 +13,7 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:5000/api/",
+        url: `http://localhost:${PORT}/api/`,
         description: "Development server",
       },
       {
@@ -27,17 +25,27 @@ const options = {
       {
         name: "products",
         description: "Product routes",
-        url: "http://localhost:5000/api/products",
+        url: `http://localhost:${PORT}/api/products`,
       },
       {
         name: "user",
         description: "User routes",
-        url: "http://localhost:5000/api/user",
+        url: `http://localhost:${PORT}/api/user`,
       },
       {
         name: "brands",
-        description: "User routes",
-        url: "http://localhost:5000/api/brands",
+        description: "Brands routes",
+        url: `http://localhost:${PORT}/api/brands`,
+      },
+      {
+        name: "basket",
+        description: "Basket routes",
+        url: `http://localhost:${PORT}/api/basket`,
+      },
+      {
+        name: "order",
+        description: "Order routes",
+        url: `http://localhost:${PORT}/api/order`,
       },
     ],
     components: {
@@ -335,6 +343,80 @@ const options = {
             },
           },
         },
+        BasketItem: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            productId: { type: "integer", example: 123456 },
+            quantity: { type: "integer", example: 2 },
+            price: { type: "number", example: 89.99 },
+            name: { type: "string", example: "Зволожуючий крем для рук" },
+            image: { type: "string", example: "https://example.com/image.jpg" },
+          },
+        },
+        Basket: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            owner: { type: "integer", example: 806 },
+            total: { type: "number", example: 359.99 },
+            BasketItems: {
+              type: "array",
+              items: { $ref: "#/components/schemas/BasketItem" },
+            },
+          },
+        },
+        Order: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            owner: { type: "integer", example: 806 },
+            status: {
+              type: "string",
+              enum: [
+                "Новий",
+                "Прийняте в роботу",
+                "Збирається",
+                "Зібрано",
+                "Відправлено",
+                "Відміна",
+              ],
+              example: "Новий",
+            },
+            paymentMethod: { type: "string", example: "Накладений платіж" },
+            comments: {
+              type: "string",
+              example: "Будь ласка, зателефонуйте перед доставкою",
+            },
+            delivery: { type: "string", example: "Нова Пошта" },
+            warehouse: { type: "string", example: "Відділення №1" },
+            address: { type: "string", example: "вул. Незалежності, 12" },
+            building: { type: "string", example: "Буд. 5А" },
+            apartment: { type: "string", example: "Кв. 12" },
+            orderNumber: { type: "string", example: "153205123" },
+            total: { type: "number", example: 359.99 },
+            date: {
+              type: "string",
+              format: "date-time",
+              example: "2025-05-03T15:00:00Z",
+            },
+            OrderedItems: {
+              type: "array",
+              items: { $ref: "#/components/schemas/OrderedItem" },
+            },
+          },
+        },
+        OrderedItem: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            productId: { type: "integer", example: 123456 },
+            quantity: { type: "integer", example: 2 },
+            price: { type: "number", example: 89.99 },
+            name: { type: "string", example: "Зволожуючий крем для рук" },
+            image: { type: "string", example: "https://example.com/image.jpg" },
+          },
+        },
       },
       securitySchemes: {
         bearerAuth: {
@@ -349,13 +431,13 @@ const options = {
       },
     ],
   },
-  apis: ["./routes/*.js"],
+  apis: ["./routes/*.js", "./models/*.js", "./controllers/*.js"],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
 const swaggerDocs = (app) => {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  console.log("Swagger is running on http://localhost:5000/api-docs");
+  console.log(`Swagger is running on http://localhost:${PORT}/api-docs`);
 };
 
 module.exports = swaggerDocs;

@@ -6,7 +6,7 @@ const ctrlWrapper = require("../helpers/ctrlWrapper");
 
 /** 🔹 Отримати всі продукти */
 const getAllProducts = async (req, res, next) => {
-  const { page = 1, limit = 4 } = req.query;
+  const { page = 1, limit = 32 } = req.query;
   const offset = (+page - 1) * +limit; // пагінація
   const whereClause = {}; // фільтрація
   const orderClause = []; // сортування
@@ -182,7 +182,7 @@ const deleteProduct = async (req, res, next) => {
 /** 🔹 Отримати продукти за категорією */
 const getCategoryProducts = async (req, res, next) => {
   const { category } = req.params;
-  const { page = 1, limit = 4 } = req.query;
+  const { page = 1, limit = 32 } = req.query;
   const offset = (+page - 1) * limit;
 
   if (!category) return next(ApiError.badRequest("Missing category"));
@@ -214,7 +214,7 @@ const getCategoryProducts = async (req, res, next) => {
 /** 🔹 Отримати продукти за брендом */
 const getBrandProducts = async (req, res, next) => {
   const { brand } = req.params;
-  const { page = 1, limit = 4 } = req.query;
+  const { page = 1, limit = 32 } = req.query;
   const offset = (+page - 1) * limit;
 
   if (!brand) return next(ApiError.badRequest("Missing brand"));
@@ -239,7 +239,7 @@ const getBrandProducts = async (req, res, next) => {
 
 /** 🔹 Пошук продуктів по назві та коду */
 const getSearchQueryProducts = async (req, res, next) => {
-  const { page = 1, limit = 4, query } = req.query;
+  const { page = 1, limit = 32, query } = req.query;
   const offset = (+page - 1) * +limit;
 
   if (!query) return next(ApiError.badRequest("Missing search query"));
@@ -278,7 +278,7 @@ const getSearchQueryProducts = async (req, res, next) => {
 
 /** 🔹 Отримати продукти зі знижками */
 const getDiscountedProducts = async (req, res, next) => {
-  const { page = 1, limit = 4 } = req.query;
+  const { page = 1, limit = 32 } = req.query;
   const offset = (+page - 1) * limit;
 
   const products = await Product.findAndCountAll({
@@ -301,7 +301,7 @@ const getDiscountedProducts = async (req, res, next) => {
 
 /** 🔹 Отримати новинки з продуктів */
 const getNewnessProducts = async (req, res, next) => {
-  const { page = 1, limit = 4 } = req.query;
+  const { page = 1, limit = 32 } = req.query;
   const offset = (+page - 1) * limit;
 
   const products = await Product.findAll({
