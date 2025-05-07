@@ -11,6 +11,8 @@ const db = require("./models"); // Підключення до бази дани
 const router = require("./routes/index"); // Підключення до маршрутів
 const errorHandler = require("./middlewares/ErrorHandlingMiddleware"); // Підключення до middleware
 const swaggerDocs = require("./docs/swagger"); // Підключення до swagger документації
+const emailRouter = require("./email");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +30,8 @@ swaggerDocs(app); // Підключення до swagger документаці�
 app.use("/api", router); // Підключення до маршрутів
 // Error middleware
 app.use(errorHandler); // Підключення до middleware
+// Поштова розсилка
+router.use("/email", emailRouter);
 
 // Логгер
 app.use(async (req, res, next) => {
@@ -39,6 +43,8 @@ app.use(async (req, res, next) => {
 
   next(); // щоб експерес продовжував далі працювати ставимо некст.
 });
+
+
 // Запуск сервера
 const start = async () => {
   try {
