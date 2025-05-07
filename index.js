@@ -14,11 +14,6 @@ const swaggerDocs = require("./docs/swagger"); // Підключення до sw
 const emailRouter = require("./email");
 
 
-const db = require("./models"); // models/index.js
-const router = require("./routes/index");
-const errorHandler = require("./middlewares/ErrorHandlingMiddleware");
-const swaggerDocs = require("./docs/swagger"); // ТВОЙ swagger – залишаємо обов'язково
-const emailRouter = require("./email");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
