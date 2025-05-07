@@ -7,8 +7,9 @@ const authRoutes = require("./auth");
 const productRoutes = require("./product");
 const brandRoutes = require("./brand");
 const basketRoutes = require("./basket");
+const typeRoutes = require("./type");
 const orderRoutes = require("./order");
-const orderedItemRoutes = require("./orderedItem");
+
 const menuRoutes = require("./menu");
 const favoriteRoutes = require("./favorite");
 const feedbackRoutes = require("./feedback");
@@ -19,8 +20,10 @@ router.use("/products", productRoutes);
 router.use("/auth", authRoutes);
 router.use("/brands", brandRoutes);
 router.use("/basket", basketRoutes);
-// router.use("/order", orderRoutes);
-// router.use("/orderedItem", orderedItemRoutes);
+router.use("/type", typeRoutes);
+
+router.use("/order", orderRoutes);
+
 // router.use("/favorite", favoriteRoutes);
 // router.use("/feedback", feedbackRoutes);
 router.use("/menu", menuRoutes);

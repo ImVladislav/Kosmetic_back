@@ -98,6 +98,7 @@ const register = async (req, res, next) => {
   });
 };
 
+// авторизація
 const login = async (req, res, next) => {
   const { email, password } = req.body;
   if (!email) {
@@ -144,6 +145,7 @@ const login = async (req, res, next) => {
   });
 };
 
+// отримання поточного користувача
 const getCurrent = async (req, res, next) => {
   const { id } = req.user;
 
@@ -161,6 +163,7 @@ const getCurrent = async (req, res, next) => {
   });
 };
 
+// вихід
 const logout = async (req, res, next) => {
   const { id } = req.user;
   const user = await User.findByPk(id);
@@ -169,6 +172,7 @@ const logout = async (req, res, next) => {
   res.json({ message: "Logout successful" });
 };
 
+// зміна паролю якщо забули
 const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   const user = await User.findOne({ where: { email } });
@@ -192,6 +196,7 @@ const forgotPassword = async (req, res, next) => {
   res.json({ message: "Password changed successfully" });
 };
 
+// зміна паролю в персональному кабінеті
 const changePassword = async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;
   const { id } = req.user;
@@ -206,6 +211,7 @@ const changePassword = async (req, res, next) => {
   res.json({ message: "Password changed successfully" });
 };
 
+// оновлення профілю
 const update = async (req, res, next) => {
   const { id } = req.user;
   const user = await User.findByPk(id);
