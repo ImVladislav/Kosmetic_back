@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mailer = require("../helpers/mailer"); // шлях до нового mailer
-const { ctrlWrapper } = require("../helpers/ApiError");
+const ctrlWrapper  = require("../helpers/ApiError");
 
 
 const sendEmail = async (paths, req, res) => {
