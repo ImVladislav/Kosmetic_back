@@ -31,8 +31,7 @@ swaggerDocs(app); // Підключення до swagger документаці�
 app.use("/api", router); // Підключення до маршрутів
 // Error middleware
 app.use(errorHandler); // Підключення до middleware
-// Поштова розсилка
-router.use("/email", emailRouter);
+
 
 // Логгер
 app.use(async (req, res, next) => {
@@ -46,7 +45,6 @@ app.use(async (req, res, next) => {
 });
 
 
-router.use("/email", emailRouter);
 // Запуск сервера
 const start = async () => {
   try {
