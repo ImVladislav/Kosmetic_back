@@ -11,7 +11,7 @@ const db = require("./models"); // Підключення до бази дани
 const router = require("./routes/index"); // Підключення до маршрутів
 const errorHandler = require("./middlewares/ErrorHandlingMiddleware"); // Підключення до middleware
 const swaggerDocs = require("./docs/swagger"); // Підключення до swagger документації
-const emailRouter = require("./email");
+
 
 
 

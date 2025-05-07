@@ -27,6 +27,6 @@ router.use("/order", orderRoutes);
 // router.use("/favorite", favoriteRoutes);
 // router.use("/feedback", feedbackRoutes);
 router.use("/menu", menuRoutes);
-// router.use("/email", emailRoutes);
+router.use("/email", emailRoutes);
 
 module.exports = router;
