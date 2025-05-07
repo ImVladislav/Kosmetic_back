@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const mailer = require("../helpers/mailer"); // шлях до нового mailer
-const ctrlWrapper  = require("../helpers/ApiError");
+const ctrlWrapper = require("../helpers/ctrlWrapper"); // ✔️
+
 
 
 const sendEmail = async (paths, req, res) => {
@@ -56,5 +57,5 @@ const deleteOldImages = () => {
 };
 
 module.exports = {
-  sendEmail: ctrlWrapper(sendEmail),
-};
+    sendEmail: ctrlWrapper(sendEmail),
+  };
