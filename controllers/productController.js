@@ -7,6 +7,11 @@ const { Product } = require("../models");
 const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 
+// для формату фільтрів
+const formatFilterIds = (raw) => {
+  return raw ? `|${String(raw).split("|").filter(Boolean).join("|")}|` : null;
+};
+
 /** 🔹 Отримати всі продукти */
 const getAllProducts = async (req, res, next) => {
   const { page = 1, limit = 32, filterTagIds } = req.query;
@@ -46,13 +51,14 @@ const getAllProducts = async (req, res, next) => {
 
   // Пошук за фільтрами (filterTagIds)
   if (filterTagIds) {
-    const tagArray = Array.isArray(filterTagIds)
-      ? filterTagIds
-      : filterTagIds.split(",").map((id) => id.trim());
+    const tagArray = String(filterTagIds)
+      .split("|")
+      .filter(Boolean)
+      .map((id) => id.trim());
 
     whereClause[Op.and] = tagArray.map((tagId) => ({
       filterTagIds: {
-        [Op.like]: `%${tagId}%`,
+        [Op.like]: `%|${tagId}|%`,
       },
     }));
   }
@@ -115,6 +121,7 @@ const createProduct = async (req, res, next) => {
       subSubCategory,
       country,
       compound,
+      filterTagIds,
     } = req.body;
 
     if (!name || !article || !code || !description || !brand) {
@@ -145,6 +152,7 @@ const createProduct = async (req, res, next) => {
       subSubCategory: subSubCategory || "",
       country: country || "",
       compound: compound || "",
+      filterTagIds: formatFilterIds(filterTagIds),
     });
 
     return res.status(201).json(product);
@@ -168,7 +176,10 @@ const updateProduct = async (req, res, next) => {
   const product = await Product.findByPk(id);
   if (!product) return next(ApiError.notFound("Product not found"));
 
-  const newProduct = await product.update(req.body);
+  const newProduct = await product.update({
+    ...req.body,
+    filterTagIds: formatFilterIds(req.body.filterTagIds),
+  });
   return res.json({ message: "Product updated successfully", newProduct });
 };
 
@@ -344,10 +355,16 @@ const importProductsFromExcel = async (req, res, next) => {
 
       const existing = await Product.findOne({ where: { code: row.code } });
       if (existing) {
-        await existing.update(row);
+        await existing.update({
+          ...row,
+          filterTagIds: formatFilterIds(row.filterTagIds),
+        });
         console.log("Оновлено:", row.code);
       } else {
-        await Product.create(row);
+        await Product.create({
+          ...row,
+          filterTagIds: formatFilterIds(row.filterTagIds),
+        });
         console.log("Створено:", row.code);
       }
     }
