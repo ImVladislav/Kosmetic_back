@@ -30,13 +30,7 @@ app.use(
     },
   })
 ); // використовується для роботи з сесіями
-// app.use(cors()); // використовується для роботи з кросс-доменними запитами
-app.use(
-  cors({
-    origin: `http://localhost:${PORT}`, // твій фронт
-    credentials: true,
-  })
-);
+app.use(cors()); // використовується для роботи з кросс-доменними запитами
 
 app.use(express.urlencoded({ extended: true })); // використовується для роботи з формами
 app.use(express.json()); // використовується для роботи з JSON
