@@ -12,6 +12,10 @@ const db = require("./models"); // Підключення до бази дани
 const router = require("./routes/index"); // Підключення до маршрутів
 const errorHandler = require("./middlewares/ErrorHandlingMiddleware"); // Підключення до middleware
 const swaggerDocs = require("./docs/swagger"); // Підключення до swagger документації
+const corsOptions = {
+  origin: ["http://localhost:3000", "https://www.beautyblossom.com.ua"],
+  credentials: true, // якщо працюєш із сесіями або cookies
+};
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,7 +34,7 @@ app.use(
     },
   })
 ); // використовується для роботи з сесіями
-app.use(cors()); // використовується для роботи з кросс-доменними запитами
+app.use(cors(corsOptions)); // використовується для роботи з кросс-доменними запитами
 
 app.use(express.urlencoded({ extended: true })); // використовується для роботи з формами
 app.use(express.json()); // використовується для роботи з JSON
