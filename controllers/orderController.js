@@ -40,40 +40,58 @@ const createOrder = async (req, res) => {
     address,
     building,
     apartment,
+    customerName,
+    customerSurname,
+    customerPhone,
   } = req.body;
 
+  const userId = req.user?.id || null;
+  const sessionId = req.sessionID;
+
   const basket = await Basket.findOne({
-    where: { owner: req.user.id },
+    where: userId ? { owner: userId } : { sessionId },
     include: [BasketItem],
   });
+
   if (!basket || basket.BasketItems.length === 0)
     throw ApiError.badRequest("Кошик порожній");
 
   let total = 0;
-  const orderedItems = await Promise.all(
-    basket.BasketItems.map(async (item) => {
-      const product = await Product.findByPk(item.productId);
-      if (!product || product.amount === 0) return null;
 
-      const price = req.user.optUser ? product.priceOPT : product.price;
-      total += price * item.quantity;
+  let orderedItems = [];
+  try {
+    orderedItems = await Promise.all(
+      basket.BasketItems.map(async (item) => {
+        const product = await Product.findByPk(item.productId);
 
-      return {
-        productId: product.id,
-        quantity: item.quantity,
-        price,
-        productName: product.name,
-        productImage: product.images,
-      };
-    })
-  );
+        // console.log("🧪 product for item:", item.productId, product);
+        if (!product || product.amount === 0) return null;
+
+        const price = req.user?.optUser ? product.priceOPT : product.price;
+        total += price * item.quantity;
+
+        return {
+          productId: product.id,
+          quantity: item.quantity,
+          price,
+          productName: product.name,
+          productImage: product.images,
+        };
+      })
+    );
+  } catch (err) {
+    console.log("❌ item map error:", err);
+    throw ApiError.internal("Помилка при створенні товарів замовлення");
+  }
 
   const filteredItems = orderedItems.filter(Boolean);
+  console.log("🧪 filteredItems:", filteredItems);
   if (filteredItems.length === 0)
     throw ApiError.badRequest("Всі товари з кошика недоступні");
 
   const newOrder = await Order.create({
-    owner: req.user.id,
+    owner: userId,
+    sessionId: userId ? null : sessionId,
     total,
     paymentMethod,
     comments,
@@ -82,9 +100,13 @@ const createOrder = async (req, res) => {
     address,
     building,
     apartment,
+    customerName,
+    customerSurname,
+    customerPhone,
     date: new Date(),
     orderNumber: generateOrderNumber(),
   });
+  console.log("NEW ORDER:", newOrder); // Debugging line
 
   await OrderedItem.bulkCreate(
     filteredItems.map((item) => ({ ...item, orderId: newOrder.id }))
@@ -120,14 +142,6 @@ const getUserOrderById = async (req, res) => {
 };
 
 /** Отримання всіх замовлень (тільки для адміністратора) */
-// const getAllOrdersAdmin = async (req, res) => {
-//   const orders = await Order.findAll({
-//     include: [User, OrderedItem],
-//     order: [["createdAt", "DESC"]],
-//   });
-//   res.json(orders);
-// };
-
 const getAllOrdersAdmin = async (req, res) => {
   const {
     page = 1,
@@ -135,6 +149,7 @@ const getAllOrdersAdmin = async (req, res) => {
     email,
     status,
     fullName,
+    customerName,
     orderNumber,
     date,
     paymentMethod,
@@ -143,35 +158,56 @@ const getAllOrdersAdmin = async (req, res) => {
 
   const offset = (page - 1) * limit;
 
-  const where = {};
-  const userWhere = {};
+  const orderConditions = [];
+  const userConditions = [];
 
-  if (email) userWhere.email = email;
-  if (orderNumber) where.orderNumber = { [Op.like]: `%${orderNumber}%` };
+  if (orderNumber)
+    orderConditions.push({ orderNumber: { [Op.like]: `%${orderNumber}%` } });
   if (date) {
-    where.date = {
-      [Op.gte]: new Date(date),
-      [Op.lt]: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000),
-    };
+    orderConditions.push({
+      date: {
+        [Op.gte]: new Date(date),
+        [Op.lt]: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000),
+      },
+    });
   }
-  if (paymentMethod) where.paymentMethod = { [Op.like]: `%${paymentMethod}%` };
-  if (status && status !== "Всі") where.status = status;
-  if (total) where.total = +total;
+  if (paymentMethod)
+    orderConditions.push({
+      paymentMethod: { [Op.like]: `%${paymentMethod}%` },
+    });
+  if (status && status !== "Всі") orderConditions.push({ status });
+  if (total) orderConditions.push({ total: +total });
+  if (customerName) {
+    orderConditions.push({
+      [Op.or]: [
+        { customerName: { [Op.like]: `%${customerName}%` } },
+        { customerSurname: { [Op.like]: `%${customerName}%` } },
+      ],
+    });
+  }
 
   if (fullName) {
-    const [firstName, lastName] = fullName.trim().split(" ");
-    userWhere.firstName = { [Op.like]: `%${firstName || ""}%` };
-    userWhere.lastName = { [Op.like]: `%${lastName || ""}%` };
+    userConditions.push({
+      [Op.or]: [
+        { firstName: { [Op.like]: `%${fullName}%` } },
+        { lastName: { [Op.like]: `%${fullName}%` } },
+      ],
+    });
   }
+  if (email) userConditions.push({ email: { [Op.like]: `%${email}%` } });
 
   const result = await Order.findAndCountAll({
-    where,
+    where: orderConditions.length ? { [Op.and]: orderConditions } : {},
     include: [
       {
         model: User,
         as: "ownerInfo",
-        where: userWhere,
+        required: userConditions.length > 0,
+        where: userConditions.length ? { [Op.and]: userConditions } : undefined,
         attributes: ["firstName", "lastName", "email"],
+      },
+      {
+        model: OrderedItem,
       },
     ],
     order: [["createdAt", "DESC"]],
@@ -179,8 +215,10 @@ const getAllOrdersAdmin = async (req, res) => {
     offset,
   });
 
+  // console.log("result", result);
   res.json({
-    total: result.count,
+    ordersCount: result.rows.length,
+    totalCount: result.count,
     totalPages: Math.ceil(result.count / limit),
     page: +page,
     orders: result.rows,

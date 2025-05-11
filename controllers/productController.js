@@ -1,22 +1,21 @@
 const { Op } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
+const xlsx = require("xlsx");
 
 const { Product } = require("../models");
 const ApiError = require("../helpers/ApiError");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 
-const fs = require("fs");
-const path = require("path");
-const xlsx = require("xlsx");
-
-
 /** 🔹 Отримати всі продукти */
 const getAllProducts = async (req, res, next) => {
-  const { page = 1, limit = 32 } = req.query;
-  const offset = (+page - 1) * +limit; // пагінація
-  const whereClause = {}; // фільтрація
-  const orderClause = []; // сортування
+  const { page = 1, limit = 32, filterTagIds } = req.query;
+  const offset = (+page - 1) * +limit;
 
-  // фільтр за категорією
+  const whereClause = {};
+  const orderClause = [];
+
+  // Категорії
   if (req.query.category) {
     whereClause[Op.or] = [
       { category: req.query.category },
@@ -24,45 +23,47 @@ const getAllProducts = async (req, res, next) => {
       { subSubCategory: req.query.category },
     ];
   }
-  // фільтр за брендом
+
+  // Бренд
   if (req.query.brand) {
     whereClause.brand = req.query.brand;
   }
-  // фільтр за новинками
+
+  // Новинки
   if (req.query.newness === "true") {
     whereClause.newness = true;
   }
-  // фільтр по знижкам
+
+  // Знижка
   if (req.query.sale === "true") {
     whereClause.sale = true;
   }
-  // фільтр по наявності
+
+  // Наявність
   if (req.query.amount === "true") {
     whereClause.amount = { [Op.ne]: 0 };
   }
 
-  // сортування за ціною
-  if (req.query.price === "true") {
-    orderClause.push(["price", "ASC"]);
-  }
-  if (req.query.price === "false") {
-    orderClause.push(["price", "DESC"]);
-  }
-  // сортування за оптовою ціною
-  if (req.query.priceOPT === "true") {
-    orderClause.push(["priceOPT", "ASC"]);
-  }
-  if (req.query.priceOPT === "false") {
-    orderClause.push(["priceOPT", "DESC"]);
+  // Пошук за фільтрами (filterTagIds)
+  if (filterTagIds) {
+    const tagArray = Array.isArray(filterTagIds)
+      ? filterTagIds
+      : filterTagIds.split(",").map((id) => id.trim());
+
+    whereClause[Op.and] = tagArray.map((tagId) => ({
+      filterTagIds: {
+        [Op.like]: `%${tagId}%`,
+      },
+    }));
   }
 
-  // сортування по назві
-  if (req.query.name === "true") {
-    orderClause.push(["name", "ASC"]);
-  }
-  if (req.query.name === "false") {
-    orderClause.push(["name", "DESC"]);
-  }
+  // Сортування
+  if (req.query.price === "true") orderClause.push(["price", "ASC"]);
+  if (req.query.price === "false") orderClause.push(["price", "DESC"]);
+  if (req.query.priceOPT === "true") orderClause.push(["priceOPT", "ASC"]);
+  if (req.query.priceOPT === "false") orderClause.push(["priceOPT", "DESC"]);
+  if (req.query.name === "true") orderClause.push(["name", "ASC"]);
+  if (req.query.name === "false") orderClause.push(["name", "DESC"]);
 
   const products = await Product.findAndCountAll({
     where: whereClause,
@@ -148,9 +149,10 @@ const createProduct = async (req, res, next) => {
 
     return res.status(201).json(product);
   } catch (error) {
-
-      console.error("CREATE PRODUCT ERROR:", error); // додали вивід реальної помилки
-      next(ApiError.internal(error.message || "Server error while creating product"));
+    console.error("CREATE PRODUCT ERROR:", error); // додали вивід реальної помилки
+    next(
+      ApiError.internal(error.message || "Server error while creating product")
+    );
 
     // console.error("Error in createProduct:", error);
     // next(ApiError.internal("Server error while creating product"));
@@ -243,7 +245,6 @@ const getBrandProducts = async (req, res, next) => {
 
 /** 🔹 Пошук продуктів по назві та коду */
 const getSearchQueryProducts = async (req, res, next) => {
-
   const { page = 1, limit = 24, query } = req.query;
 
   const offset = (+page - 1) * +limit;
@@ -358,9 +359,6 @@ const importProductsFromExcel = async (req, res, next) => {
     res.status(500).json({ message: "Помилка імпорту файлу" });
   }
 };
-
-
-
 
 module.exports = {
   createProduct: ctrlWrapper(createProduct),

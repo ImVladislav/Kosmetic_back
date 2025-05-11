@@ -165,6 +165,11 @@ const options = {
               description: "Склад товару",
               example: "Склад: крем забезпечення сонцезахисними світлом, 50 мл",
             },
+            filterTagId: {
+              type: "string",
+              description: "ID фільтрів товару",
+              example: "12,15,14,11",
+            },
           },
         },
         Products: {

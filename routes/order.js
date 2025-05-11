@@ -3,9 +3,10 @@ const router = new Routes();
 const orderController = require("../controllers/orderController");
 const authenticate = require("../middlewares/authenticate");
 const isAdmin = require("../middlewares/isAdmin");
+const optionalAuth = require("../middlewares/optionalAuth");
 
 /** Створення нового замовлення */
-router.post("/", authenticate, orderController.createOrder);
+router.post("/", optionalAuth, orderController.createOrder);
 /**
  * @swagger
  * /order:
