@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const session = require("express-session"); // для роботи з сесіями
 const moment = require("moment"); // для роботи з датами
 const logger = require("morgan"); // для логування
 const fs = require("fs/promises"); // для роботи з файлами
@@ -12,15 +13,31 @@ const router = require("./routes/index"); // Підключення до мар�
 const errorHandler = require("./middlewares/ErrorHandlingMiddleware"); // Підключення до middleware
 const swaggerDocs = require("./docs/swagger"); // Підключення до swagger документації
 
-
-
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 app.use(logger(formatsLogger)); // використовується для логування запитів
-app.use(cors()); // використовується для роботи з кросс-доменними запитами
+app.use(
+  session({
+    secret: "beautyblossom-secret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: false, // true тільки в HTTPS
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 днів
+    },
+  })
+); // використовується для роботи з сесіями
+// app.use(cors()); // використовується для роботи з кросс-доменними запитами
+app.use(
+  cors({
+    origin: `http://localhost:${PORT}`, // твій фронт
+    credentials: true,
+  })
+);
+
 app.use(express.urlencoded({ extended: true })); // використовується для роботи з формами
 app.use(express.json()); // використовується для роботи з JSON
 // app.use(fileUpload({}));// використовується для роботи з файлами
@@ -32,7 +49,6 @@ app.use("/api", router); // Підключення до маршрутів
 // Error middleware
 app.use(errorHandler); // Підключення до middleware
 
-
 // Логгер
 app.use(async (req, res, next) => {
   const { method, url } = req; // метод та url беремо з реквесту
@@ -43,7 +59,6 @@ app.use(async (req, res, next) => {
 
   next(); // щоб експерес продовжував далі працювати ставимо некст.
 });
-
 
 // Запуск сервера
 const start = async () => {

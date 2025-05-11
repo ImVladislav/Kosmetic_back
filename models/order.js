@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
     apartment: DataTypes.STRING,
     orderNumber: DataTypes.STRING,
     date: DataTypes.DATE,
+    sessionId: DataTypes.STRING,
+    customerName: DataTypes.STRING,
+    customerSurname: DataTypes.STRING,
+    customerPhone: DataTypes.STRING,
   });
 
   Order.associate = (models) => {

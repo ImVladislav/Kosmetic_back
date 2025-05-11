@@ -1,11 +1,11 @@
 const Routes = require("express");
 const router = new Routes();
 
-const authenticate = require("../middlewares/authenticate");
 const basketController = require("../controllers/basketController");
+const optionalAuth = require("../middlewares/optionalAuth");
 
 //отримання всіх товарів у корзині користувача
-router.get("/", authenticate, basketController.getBasket);
+router.get("/", optionalAuth, basketController.getBasket);
 /**
  * @swagger
  * /basket:
@@ -24,7 +24,7 @@ router.get("/", authenticate, basketController.getBasket);
  */
 
 //додати новий товар або оновити товар у кошику користувача
-router.post("/", authenticate, basketController.addOrUpdateItem);
+router.post("/", optionalAuth, basketController.addOrUpdateItem);
 /**
  * @swagger
  * /basket:
@@ -54,7 +54,7 @@ router.post("/", authenticate, basketController.addOrUpdateItem);
  */
 
 // видалити товар з кошика по id
-router.delete("/clear/:productId", authenticate, basketController.removeItem);
+router.delete("/clear/:productId", optionalAuth, basketController.removeItem);
 /**
  * @swagger
  * /basket/clear/{productId}:
@@ -77,7 +77,7 @@ router.delete("/clear/:productId", authenticate, basketController.removeItem);
  */
 
 // очистити весь кошик
-router.delete("/clear", authenticate, basketController.clearBasket);
+router.delete("/clear", optionalAuth, basketController.clearBasket);
 /**
  * @swagger
  * /basket/clear:

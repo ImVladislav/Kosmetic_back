@@ -19,12 +19,11 @@ module.exports = (sequelize, DataTypes) => {
     subSubCategory: { type: DataTypes.STRING },
     country: { type: DataTypes.STRING },
     compound: { type: DataTypes.TEXT },
+    filterTagIds: { type: DataTypes.STRING, allowNull: true },
   });
 
   Product.associate = (models) => {
-    // Product.belongsTo(models.Type, { foreignKey: "type" }); //
     Product.belongsTo(models.Brand, { foreignKey: "brand" }); //
-    Product.hasMany(models.ProductInfo, { foreignKey: "productId" }); //
     Product.hasMany(models.Favorite, { foreignKey: "productId" });
     Product.hasMany(models.OrderedItem, { foreignKey: "productId" }); //
     Product.hasMany(models.BasketItem, { foreignKey: "productId" }); //

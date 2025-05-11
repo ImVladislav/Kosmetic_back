@@ -8,7 +8,6 @@ module.exports = (sequelize, DataTypes) => {
 
   Brand.associate = (models) => {
     Brand.hasMany(models.Product, { foreignKey: "brand" }); //
-    Brand.belongsToMany(models.Type, { through: "TypeBrand" }); //
   };
 
   return Brand;

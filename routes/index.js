@@ -7,7 +7,7 @@ const authRoutes = require("./auth");
 const productRoutes = require("./product");
 const brandRoutes = require("./brand");
 const basketRoutes = require("./basket");
-const typeRoutes = require("./type");
+const filterTagsRoutes = require("./filterTags");
 const orderRoutes = require("./order");
 
 const menuRoutes = require("./menu");
@@ -20,7 +20,7 @@ router.use("/products", productRoutes);
 router.use("/auth", authRoutes);
 router.use("/brands", brandRoutes);
 router.use("/basket", basketRoutes);
-router.use("/type", typeRoutes);
+router.use("/filter-tags", filterTagsRoutes);
 
 router.use("/order", orderRoutes);
 

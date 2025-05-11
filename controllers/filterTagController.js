@@ -1,0 +1,52 @@
+const fs = require("fs");
+const xlsx = require("xlsx");
+const { FilterTag } = require("../models");
+const ctrlWrapper = require("../helpers/ctrlWrapper");
+const ApiError = require("../helpers/ApiError");
+
+const importFilterTagFromExcel = async (req, res, next) => {
+  if (!req.file || !req.file.path) {
+    return next(ApiError.badRequest("Файл не надано"));
+  }
+
+  const workbook = xlsx.readFile(req.file.path);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = xlsx.utils.sheet_to_json(sheet);
+
+  if (!rows.length) {
+    return next(ApiError.badRequest("Файл порожній або некоректний"));
+  }
+
+  console.log("Знайдено рядків:", rows.length);
+
+  let created = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (!row.type) continue;
+
+    const where = {
+      type: row.type,
+      value: row.value || null,
+    };
+
+    const existing = await FilterTag.findOne({ where });
+
+    if (existing) {
+      console.log("Пропущено (вже існує):", row.type, row.value);
+      skipped++;
+      continue;
+    }
+
+    await FilterTag.create(row);
+    console.log("Створено:", row.type, row.value);
+    created++;
+  }
+
+  fs.unlinkSync(req.file.path);
+  res.json({ message: `Імпорт завершено успішно`, created, skipped });
+};
+
+module.exports = {
+  importFilterTagFromExcel: ctrlWrapper(importFilterTagFromExcel),
+};
