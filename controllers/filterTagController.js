@@ -47,6 +47,41 @@ const importFilterTagFromExcel = async (req, res, next) => {
   res.json({ message: `Імпорт завершено успішно`, created, skipped });
 };
 
+// Отримати всі фільтри
+const getAllFilterTags = async (req, res, next) => {
+  const tags = await FilterTag.findAll({
+    order: [["id", "ASC"]],
+  });
+
+  if (!tags.length) {
+    return next(ApiError.notFound("Filter tags not found"));
+  }
+
+  res.json(tags);
+};
+// Отримати всі фільтри з групуванням
+const getGroupedFilterTags = async (req, res, next) => {
+  const tags = await FilterTag.findAll({
+    order: [
+      ["type", "ASC"],
+      ["id", "ASC"],
+    ],
+  });
+
+  if (!tags.length) {
+    return next(ApiError.notFound("Filter tags not found"));
+  }
+
+  const grouped = tags.reduce((acc, tag) => {
+    if (!acc[tag.type]) acc[tag.type] = [];
+    acc[tag.type].push({ id: tag.id, value: tag.value });
+    return acc;
+  }, {});
+
+  res.json(grouped);
+};
+
 module.exports = {
   importFilterTagFromExcel: ctrlWrapper(importFilterTagFromExcel),
+  getAllFilterTags: ctrlWrapper(getAllFilterTags),
 };

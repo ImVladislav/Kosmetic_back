@@ -13,7 +13,11 @@ const router = require("./routes/index"); // Підключення до мар�
 const errorHandler = require("./middlewares/ErrorHandlingMiddleware"); // Підключення до middleware
 const swaggerDocs = require("./docs/swagger"); // Підключення до swagger документації
 const corsOptions = {
-  origin: ["http://localhost:3000", "https://www.beautyblossom.com.ua"],
+  origin: [
+    "http://localhost:3000",
+    "https://www.beautyblossom.com.ua",
+    "https://kosmetic-front.vercel.app",
+  ],
   credentials: true, // якщо працюєш із сесіями або cookies
 };
 
