@@ -57,4 +57,25 @@ router.get("/", filterTagController.getAllFilterTags);
  *                 $ref: "#/components/schemas/FilterTag"
  */
 
+router.get("/group-tag", filterTagController.getGroupedFilterTags);
+/**
+ * @swagger
+ * /filter-tags/group-tag:
+ *   get:
+ *     summary: Отримати всі фільтри з групуванням
+ *     tags: [filter-tags]
+ *     description: Отримати всі фільтри з групуванням
+ *     responses:
+ *       200:
+ *         description: Фільтри успішно отримані
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               additionalProperties:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   $ref: "#/components/schemas/FilterTag"
+ */
 module.exports = router;

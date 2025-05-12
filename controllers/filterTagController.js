@@ -84,4 +84,5 @@ const getGroupedFilterTags = async (req, res, next) => {
 module.exports = {
   importFilterTagFromExcel: ctrlWrapper(importFilterTagFromExcel),
   getAllFilterTags: ctrlWrapper(getAllFilterTags),
+  getGroupedFilterTags: ctrlWrapper(getGroupedFilterTags),
 };

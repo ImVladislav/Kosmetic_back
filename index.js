@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session"); // для роботи з сесіями
+const MySQLStore = require("express-mysql-session")(session); // для роботи з сесіями
 const moment = require("moment"); // для роботи з датами
 const logger = require("morgan"); // для логування
 const fs = require("fs/promises"); // для роботи з файлами
@@ -12,6 +13,11 @@ const db = require("./models"); // Підключення до бази дани
 const router = require("./routes/index"); // Підключення до маршрутів
 const errorHandler = require("./middlewares/ErrorHandlingMiddleware"); // Підключення до middleware
 const swaggerDocs = require("./docs/swagger"); // Підключення до swagger документації
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ✅ CORS whitelist
 const corsOptions = {
   origin: [
     "http://localhost:3000",
@@ -20,34 +26,46 @@ const corsOptions = {
   ],
   credentials: true, // якщо працюєш із сесіями або cookies
 };
+app.use(cors(corsOptions));
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// ✅ MySQL session store
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
 
-const formatsLogger = app.get("env") === "development" ? "dev" : "short";
-app.use(logger(formatsLogger)); // використовується для логування запитів
 app.use(
   session({
+    key: "beautyblossom.sid",
     secret: "beautyblossom-secret",
+    store: sessionStore,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
-      secure: false, // true тільки в HTTPS
+      secure: false,
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 днів
     },
   })
-); // використовується для роботи з сесіями
-app.use(cors(corsOptions)); // використовується для роботи з кросс-доменними запитами
+);
+
+const formatsLogger = app.get("env") === "development" ? "dev" : "short";
+app.use(logger(formatsLogger)); // використовується для логування запитів
 
 app.use(express.urlencoded({ extended: true })); // використовується для роботи з формами
 app.use(express.json()); // використовується для роботи з JSON
 // app.use(fileUpload({}));// використовується для роботи з файлами
 app.use(express.static(path.join(__dirname, "public"))); // для роботи з статичними файлами
+
 // Swagger
 swaggerDocs(app); // Підключення до swagger документації
+
 // API routes
 app.use("/api", router); // Підключення до маршрутів
+
 // Error middleware
 app.use(errorHandler); // Підключення до middleware
 
