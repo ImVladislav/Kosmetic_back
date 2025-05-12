@@ -63,7 +63,7 @@ const getAllFilterTags = async (req, res, next) => {
 const getGroupedFilterTags = async (req, res, next) => {
   const tags = await FilterTag.findAll({
     order: [
-      ["type", "ASC"],
+      // ["type", "ASC"],
       ["id", "ASC"],
     ],
   });
