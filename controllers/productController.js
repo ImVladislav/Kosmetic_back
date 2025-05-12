@@ -20,6 +20,7 @@ const getAllProducts = async (req, res, next) => {
   const whereClause = {};
   const orderClause = [];
 
+  console.log(req.query);
   // Категорії
   if (req.query.category) {
     whereClause[Op.or] = [
