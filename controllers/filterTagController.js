@@ -1,9 +1,12 @@
 const fs = require("fs");
+
 const xlsx = require("xlsx");
 const { FilterTag } = require("../models");
 const ctrlWrapper = require("../helpers/ctrlWrapper");
 const ApiError = require("../helpers/ApiError");
+const path = require("path");
 
+// Імпорт фільтрів з Excel
 const importFilterTagFromExcel = async (req, res, next) => {
   if (!req.file || !req.file.path) {
     return next(ApiError.badRequest("Файл не надано"));
@@ -46,6 +49,39 @@ const importFilterTagFromExcel = async (req, res, next) => {
   fs.unlinkSync(req.file.path);
   res.json({ message: `Імпорт завершено успішно`, created, skipped });
 };
+// Експорт фільтрів в Excel
+const exportFilterTagToExcel = async (req, res, next) => {
+  const tags = await FilterTag.findAll({
+    order: [["id", "ASC"]],
+  });
+
+  if (!tags.length) {
+    return next(ApiError.notFound("Filter tags not found"));
+  }
+
+  const data = tags.map(({ id, type, value }) => ({
+    id,
+    type,
+    value,
+  }));
+  console.log("Отримано дані для експорту:", data.length);
+  const worksheet = xlsx.utils.json_to_sheet(data);
+  console.log("Згенеровано лист Excel");
+  const workbook = xlsx.utils.book_new();
+  console.log("Створено нову книгу Excel");
+  xlsx.utils.book_append_sheet(workbook, worksheet, "FilterTags");
+  console.log("Додано лист до книги Excel");
+
+  const filePath = path.join(__dirname, "../uploads/FilterTags.xlsx");
+  xlsx.writeFile(workbook, filePath);
+
+  res.download(filePath, "FilterTags.xlsx", (err) => {
+    if (!err) {
+      console.log("Файл успішно відправлено");
+      setTimeout(() => fs.unlinkSync(filePath), 1000); // очищення файлу після відправки
+    }
+  });
+};
 
 // Отримати всі фільтри
 const getAllFilterTags = async (req, res, next) => {
@@ -83,6 +119,7 @@ const getGroupedFilterTags = async (req, res, next) => {
 
 module.exports = {
   importFilterTagFromExcel: ctrlWrapper(importFilterTagFromExcel),
+  exportFilterTagToExcel: ctrlWrapper(exportFilterTagToExcel),
   getAllFilterTags: ctrlWrapper(getAllFilterTags),
   getGroupedFilterTags: ctrlWrapper(getGroupedFilterTags),
 };

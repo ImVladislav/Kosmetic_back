@@ -36,6 +36,27 @@ router.post(
  *         description: Фільтри успішно завантажені
  */
 
+// Експорт фільтрів в Excel
+router.get("/export", filterTagController.exportFilterTagToExcel);
+/**
+ * @swagger
+ * /filter-tags/export:
+ *   get:
+ *     summary: Отримати всі фільтри
+ *     tags: [filter-tags]
+ *     description: Отримати всі фільтри
+ *     responses:
+ *       200:
+ *         description: Фільтри успішно отримані
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *               example: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+ *               description: "Файл Excel з фільтрами"
+ */
+
 // Отримати всі фільтри
 router.get("/", filterTagController.getAllFilterTags);
 /**
